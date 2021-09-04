@@ -1,6 +1,9 @@
+/*
+Caio Vinicius Rodrigues da Costa
+Iorrana Maria do Nascimento
+*/
+
 #include <iostream>
-#include <stdio.h>
-#include <algorithm>
 #include <vector>
 
 using namespace std;
@@ -8,36 +11,7 @@ using namespace std;
 vector<vector<int>> listaAdj;
 bool mobileBom = true;
 
-int mFuncao(int nohAtual)
-{
-    int numFilhos, peso, atual, total;
-
-    numFilhos = listaAdj[nohAtual].size();
-    //cout << "O tamanho da minha lista eh " << cont << endl;
-    total = 1;
-
-    for (int i = 0; i < numFilhos; i++)
-    {
-        atual = mFuncao(listaAdj[nohAtual][i]);
-
-        //cout << "Estou consultando esse noh " << listaAdj[nohAtual][i] << endl;
-        if (i == 0)
-        {
-            /*cout << "Entrei aqui nesse noh " << listaAdj[nohAtual][i] << endl;
-            cout << "E o atual dele eh " << atual << endl;*/
-            peso = atual;
-        }
-        else if (atual != peso)
-        {
-            /*cout << "Entrei aqui nesse noh " << listaAdj[nohAtual][i] << endl;
-            cout << "O meu atual eh " << atual << endl;
-            cout << "O meu peso " << peso << endl;*/
-            mobileBom = false;
-        }
-        total = total + atual;
-    }
-    return (total);
-}
+int percorrerLista(int nohAtual);
 
 int main()
 {
@@ -53,7 +27,9 @@ int main()
         cin >> verticeFilho >> verticePai;
         listaAdj[verticePai].push_back(verticeFilho);
     }
-    mFuncao(0);
+
+    //vou iniciar o percorrimento do meu grafo no primeiro vertice
+    percorrerLista(0);
 
     if (mobileBom)
     {
@@ -65,4 +41,34 @@ int main()
     }
 
     return 0;
+}
+
+int percorrerLista(int nohAtual)
+{
+    int numFilhos, nivelAnterior, nivelAtual;
+    //busco o tamanho do vetor que esta nessa posicao
+    numFilhos = listaAdj[nohAtual].size();
+
+    int totalVertice = 1;
+
+    for (int i = 0; i < numFilhos; i++)
+    {
+        //chamo recursivamente o proximo vertice no meu vetor
+        nivelAtual = percorrerLista(listaAdj[nohAtual][i]);
+
+        //Se eu sou o primeiro filho
+        if (i == 0)
+        {
+            nivelAnterior = nivelAtual;
+        }
+        //se eu não sou o primeiro filho
+        else if (nivelAtual != nivelAnterior)
+        {
+            mobileBom = false;
+        }
+
+        totalVertice = totalVertice + nivelAtual;
+    }
+
+    return (totalVertice);
 }
