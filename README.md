@@ -14,4 +14,7 @@ Até o momento, os conceitos aprendidos na disciplina foram:
 * Algoritmo de Busca em Largura 
 * Algoritmo de Busca em Profundidade
 
+Os exercícios da discplina são enviados através do site [URI Online Judge](https://www.urionlinejudge.com.br/judge/pt/login)
+
+![GitHub Logo](http://gumga.github.io/slides-gumgaio/imgs/github-octocat.svg)
 
