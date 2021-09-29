@@ -1,0 +1,18 @@
+{
+    "files.associations": {
+        "vector": "cpp",
+        "xlocale": "cpp",
+        "algorithm": "cpp",
+        "deque": "cpp",
+        "ios": "cpp",
+        "list": "cpp",
+        "system_error": "cpp",
+        "xhash": "cpp",
+        "xiosbase": "cpp",
+        "xstring": "cpp",
+        "xtree": "cpp",
+        "iostream": "cpp",
+        "string": "cpp",
+        "xlocnum": "cpp"
+    }
+}
