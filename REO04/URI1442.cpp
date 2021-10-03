@@ -1,263 +1,217 @@
+/*
+Caio Vinicius Rodrigues da Costa
+Iorrana Maria do Nascimento
+
+Códigos checados e adaptados dos seguintes links:
+https://www.geeksforgeeks.org/bridge-in-a-graph/
+https://www.geeksforgeeks.org/tarjan-algorithm-find-strongly-connected-components/
+*/
+
 #include <iostream>
-#include <stack>
-#include <list>
 #include <vector>
-#include <algorithm>
+
+#define MAXVERTICES 1000
 
 using namespace std;
 
-// cada vértice tem o seu componente
-vector<int> listaVerticesComponentes;
-int numVertices, numArestas, componente;
-bool atravessei;
+int numVertices, numArestas, indiceDisc, contador, mPontes, componente;
 
-class Grafo
-{
-private:
-    int V;
-    list<int> *adj;
-    bool orientado;
+vector<int> grafoOrigem[MAXVERTICES];      //lista com os vertices a
+vector<int> grafoDestino[MAXVERTICES];     //lista com os vertices b
+vector<int> grafoComponentes[MAXVERTICES]; //lista com as componentes encontradas
 
-    void preenche(int v, bool visitados[], stack<int> &pilha)
-    {
-        visitados[v] = true;
+int mDiscovery[MAXVERTICES], listaComponentes[MAXVERTICES];
+bool visited[MAXVERTICES];
 
-        list<int>::iterator i;
-        for (i = adj[v].begin(); i != adj[v].end(); i++)
-        {
-            if (visitados[*i] == false)
-                preenche(*i, visitados, pilha);
-        }
-        pilha.push(v);
-    }
+int dfs_discovery[MAXVERTICES], dfs_low[MAXVERTICES], dfs_parent[MAXVERTICES]; // tarjan
 
-    void DFS(int v, bool visitados[])
-    {
-        visitados[v] = true;
-
-        if (orientado)
-            listaVerticesComponentes[v] = componente;
-
-        list<int>::iterator i;
-        for (i = adj[v].begin(); i != adj[v].end(); i++)
-        {
-            if (visitados[*i] == false)
-                DFS(*i, visitados);
-        }
-    }
-
-public:
-    Grafo(int V, bool orientado = true)
-    {
-        this->V = V;
-        adj = new list<int>[V];
-        this->orientado = orientado;
-    }
-
-    void adicionarAresta(int i, int j)
-    {
-        adj[i].push_back(j);
-    }
-
-    Grafo obterGrafoTransposto()
-    {
-        Grafo grafo_transposto(V);
-
-        for (int v = 0; v < V; v++)
-        {
-            list<int>::iterator i;
-            for (i = adj[v].begin(); i != adj[v].end(); i++)
-                grafo_transposto.adj[*i].push_back(v);
-        }
-
-        return grafo_transposto;
-    }
-
-    int obterComponentes()
-    {
-        int qte_componentes = 0;
-        stack<int> pilha;
-        bool *visitados = new bool[V];
-
-        for (int i = 0; i < V; i++)
-            visitados[i] = false;
-
-        for (int i = 0; i < V; i++)
-        {
-            if (visitados[i] == false)
-                preenche(i, visitados, pilha);
-        }
-
-        Grafo gt = obterGrafoTransposto();
-
-        for (int i = 0; i < V; i++)
-            visitados[i] = false;
-
-        while (!pilha.empty())
-        {
-            int v = pilha.top();
-
-            pilha.pop();
-
-            if (visitados[v] == false)
-            {
-                gt.DFS(v, visitados);
-                qte_componentes++;
-
-                if (orientado)
-                    componente++;
-            }
-        }
-
-        return qte_componentes;
-    }
-
-    bool ehConectado()
-    {
-        bool *visitados = new bool[V];
-
-        for (int i = 0; i < V; i++)
-            visitados[i] = false;
-
-        DFS(0, visitados);
-
-        for (int i = 0; i < V; i++)
-        {
-            if (!visitados[i])
-                return false;
-        }
-
-        return true;
-    }
-
-    void bridgeUtil(int u, bool visited[], int disc[], int low[], int parent[])
-    {
-        if (atravessei == false)
-        {
-            static int time = 0;
-
-            visited[u] = true;
-
-            disc[u] = low[u] = ++time;
-
-            list<int>::iterator i;
-            for (i = adj[u].begin(); i != adj[u].end(); ++i)
-            {
-                int v = *i;
-
-                if (!visited[v])
-                {
-                    parent[v] = u;
-                    bridgeUtil(v, visited, disc, low, parent);
-
-                    low[u] = min(low[u], low[v]);
-
-                    // vértices que formam a ponte
-                    if (low[v] > disc[u])
-                    {
-                        /*
-							verifica se os vértices estão em componentes
-							separados no grafo original
-						*/
-                        if (listaVerticesComponentes[v] != listaVerticesComponentes[u])
-                        {
-                            atravessei = true;
-                            break;
-                        }
-                    }
-                }
-                else if (v != parent[u])
-                    low[u] = min(low[u], disc[v]);
-            }
-        }
-    }
-
-    void bridge()
-    {
-        bool *visited = new bool[V];
-        int *disc = new int[V];
-        int *low = new int[V];
-        int *parent = new int[V];
-
-        for (int i = 0; i < V; i++)
-        {
-            parent[i] = -1;
-            visited[i] = false;
-        }
-
-        for (int i = 0; i < V; i++)
-            if (visited[i] == false)
-                bridgeUtil(i, visited, disc, low, parent);
-    }
-};
+void inicializa();                       //funcao para inicializar
+void DFS(int mVertice);                  //DFS que vai calcular os valores de discovery em G
+void DFS(int mVertice, int mComponente); //DFS que vai montar o garfo auxiliar das componentes fortemente conexas
+void doTarjan(int mVertice);
 
 int main()
 {
+    componente = 0;
 
-    while (cin >> numVertices)
+    int verticeOrigem, verticeDestino, sentidoRua;
+
+    while (cin >> numVertices >> numArestas)
     {
-        componente = 1;
-        listaVerticesComponentes.clear();
-        atravessei = false;
 
-        for (int i = 0; i < numVertices; i++)
-            listaVerticesComponentes.push_back(0);
+        //limpa a execucao anterior
+        inicializa();
 
-        cin >> numArestas;
-        Grafo g(numVertices);         // grafo original
-        Grafo g2(numVertices, false); // grafo não orientado
-        int A, B, T;
-
-        cin >> A >> B >> T;
+        // leio as arestas iniciais
+        cin >> verticeOrigem >> verticeDestino >> sentidoRua;
 
         for (int i = 1; i < numArestas; i++)
         {
-            cin >> A >> B >> T;
+            cin >> verticeOrigem >> verticeDestino >> sentidoRua;
 
-            if (T == 1)
-            {
-                g.adicionarAresta(A - 1, B - 1);
-            }
-            else
-            {
-                g.adicionarAresta(A - 1, B - 1);
-                g.adicionarAresta(B - 1, A - 1);
-            }
+            grafoOrigem[verticeOrigem - 1].push_back(verticeDestino - 1);
+            grafoDestino[verticeDestino - 1].push_back(verticeOrigem - 1);
 
-            // grafo não orientado: adiciona a ida e a volta
-            g2.adicionarAresta(A - 1, B - 1);
-            g2.adicionarAresta(B - 1, A - 1);
+            if (sentidoRua == 2) //se o sentido da rua eh dupla adiciona nas duas listas
+            {
+                grafoOrigem[verticeDestino - 1].push_back(verticeOrigem - 1);
+                grafoDestino[verticeOrigem - 1].push_back(verticeDestino - 1);
+            }
         }
 
-        int ssc = g.obterComponentes();
-
-        // se for 1, então não precisa mudar direção alguma, imprime "-"
-        if (ssc == 1)
+        //descobrir o tempo de discovery de cada vertice
+        for (int i = 0; i < numVertices; i++)
         {
-            cout << "-";
-        }
-        else if (ssc > 1)
-        {
-            /*
-				se for maior que 1, verifica se o grafo não orientado
-				é conectado, se não for imprime "*"
-			*/
-
-            if (!g2.ehConectado())
-                cout << "*";
-            else
+            if (visited[i] == false)
             {
-                g2.bridge();
-
-                if (atravessei == false)
-                    cout << "1";
-                else
-                    cout << "2";
+                DFS(i);
             }
         }
 
-        cout << endl;
+        //descobrir as componentes fortemente conexas
+        for (int i = numVertices - 1; i >= 0; i--)
+        {
+            if (listaComponentes[mDiscovery[i]] == -1)
+            {
+                DFS(mDiscovery[i], componente++);
+            }
+        }
+
+        //caso tenha apenas uma componente entao implica em fortemente conexa
+        if (componente == 1)
+        {
+            cout << "-" << endl;
+            continue;
+        }
+
+        //vou procurar por pontes no grafo das componentes
+        contador = 0;
+        dfs_parent[0] = 0;
+        doTarjan(0);
+
+        //verifico se o grafo das componentes eh conexo
+        int j;
+        for (j = 0; j < componente; j++)
+        {
+            if (dfs_parent[j] == -1)
+            {
+                break;
+            }
+        }
+
+        if (j < componente)
+        {
+            cout << "*" << endl;
+        }
+        else if (mPontes)
+        {
+            cout << "2" << endl;
+        }
+        else
+        {
+            cout << "1" << endl;
+        }
     }
 
     return 0;
+}
+
+void inicializa()
+{
+    for (int i = 0; i < numVertices; i++)
+    {
+        grafoOrigem[i].clear();
+        grafoDestino[i].clear();
+        grafoComponentes[i].clear();
+        dfs_parent[i] = -1;
+        dfs_discovery[i] = -1;
+        dfs_low[i] = -1;
+        listaComponentes[i] = -1;
+        visited[i] = false;
+        mDiscovery[i] = -1;
+        mPontes = 0;
+        indiceDisc = 0;
+        componente = 0;
+    }
+}
+
+void DFS(int mVertice)
+{
+    visited[mVertice] = true;
+
+    vector<int>::iterator i;
+    for (i = grafoOrigem[mVertice].begin(); i != grafoOrigem[mVertice].end(); i++)
+    {
+        if (visited[*i] == false)
+            DFS(*i);
+    }
+    mDiscovery[indiceDisc++] = mVertice;
+}
+
+void DFS(int mVertice, int mComponente)
+{
+    listaComponentes[mVertice] = mComponente;
+
+    vector<int>::iterator i;
+    for (i = grafoDestino[mVertice].begin(); i != grafoDestino[mVertice].end(); i++)
+    {
+        if (listaComponentes[*i] == -1)
+        {
+
+            DFS(*i, mComponente);
+        }
+        else if (listaComponentes[*i] != listaComponentes[mVertice])
+        {
+            grafoComponentes[listaComponentes[*i]].push_back(listaComponentes[mVertice]);
+            grafoComponentes[listaComponentes[mVertice]].push_back(listaComponentes[*i]);
+        }
+    }
+}
+
+void doTarjan(int mVertice)
+{
+    int umVertice;
+    dfs_discovery[mVertice] = contador++;
+    dfs_low[mVertice] = dfs_discovery[mVertice];
+    vector<int>::iterator i;
+    for (i = grafoComponentes[mVertice].begin(); i != grafoComponentes[mVertice].end(); i++)
+    {
+        if (dfs_discovery[umVertice = (*i)] == -1)
+        {
+            dfs_parent[umVertice] = mVertice;
+            doTarjan(umVertice);
+            if (dfs_low[mVertice] > dfs_low[umVertice])
+            {
+                dfs_low[mVertice] = dfs_low[umVertice];
+            }
+
+            // testo ponte a existencia de uma ponte
+            else if (dfs_low[umVertice] == dfs_discovery[umVertice] && mPontes == 0)
+            {
+                int q = 0;
+                vector<int>::iterator i;
+                for (i = grafoComponentes[mVertice].begin(); i != grafoComponentes[mVertice].end(); i++)
+                {
+                    if ((*i) == umVertice)
+                    {
+                        q++;
+                    }
+
+                    if (q > 1) //encontrei um arco paralelo
+                    {
+                        break;
+                    }
+                }
+
+                if (q == 1)
+                {
+                    mPontes++;
+                }
+            }
+        }
+        else if (umVertice != dfs_parent[mVertice] && dfs_low[mVertice] > dfs_discovery[umVertice])
+        {
+            dfs_low[mVertice] = dfs_discovery[umVertice];
+        }
+    }
 }
