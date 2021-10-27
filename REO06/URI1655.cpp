@@ -1,72 +1,113 @@
-#include <bits/stdc++.h>
+/*
+Caio Vinicius Rodrigues da Costa
+Iorrana Maria do Nascimento
 
-#define inf 10000000
+Algoritmo de Dijkstra adaptado do REO anterior para atender o problema
+*/
+
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <iomanip>
+
+#define MAXVERTICES 100
 
 using namespace std;
 
-typedef pair<double,int> ii;
+// defino a estrutura da minha lista de adjacencia
+typedef pair<double, int> listaAdj;
 
-int n;
-vector<double> D;
-vector<vector<ii > > G;
+vector<listaAdj> mGrafo[MAXVERTICES];
+double distancia[MAXVERTICES];
+int numVertices, numArestas;
 
-void dijkstra(int source, int dest)
+double doDijkstra(int verticeOrigem, int verticeDestino);
+void inicializar(int mVerticeOrigem);
+
+int main()
 {
-	priority_queue <ii, vector<ii >, greater<ii > > Q;
-	
-	D[source] = 1.0;
-	
-	Q.push(ii(1.0,source));
-	
-	while(!Q.empty()) 
+	int pontoA, pontoB, pesoAresta;
+
+	cin >> numVertices;
+
+	while (numVertices != 0) // criterio de parada do programa
 	{
-		ii top = Q.top();
-		Q.pop();
-		
-		int v = top.second;
-		double d = top.first;
-		if(d <= D[v]) 
+		cin >> numArestas;
+
+		// limpo o vector antes de uma nova execucao
+		for (int i = 0; i <= numVertices; i++)
 		{
-			for (vector<ii > :: iterator it = G[v].begin(); it != G[v].end(); it++)
+			mGrafo[i].clear();
+		}
+
+		// criando o meu grafo
+		for (int i = 0; i < numArestas; i++)
+		{
+			cin >> pontoA >> pontoB >> pesoAresta;
+			mGrafo[pontoA - 1].push_back(listaAdj((double)pesoAresta / 100, pontoB - 1));
+			mGrafo[pontoB - 1].push_back(listaAdj((double)pesoAresta / 100, pontoA - 1));
+		}
+
+		double melhorCaminho = doDijkstra(0, numVertices - 1);
+
+		// formatando o output
+		cout << fixed << setprecision(6);
+		cout << melhorCaminho * 100 << " percent" << endl;
+
+		// tento uma nova execucao
+		cin >> numVertices;
+	}
+
+	return 0;
+}
+
+double doDijkstra(int verticeOrigem, int verticeDestino)
+{
+	// crio minha fila de prioridade
+	priority_queue<listaAdj, vector<listaAdj>, greater<listaAdj>> minHeap;
+
+	// adicionando na fila de prioridades o vertice origem e a sua distancia
+	minHeap.push(listaAdj(1.0, verticeOrigem));
+
+	// inicializo os vértices do grafo
+	inicializar(verticeOrigem);
+
+	while (!minHeap.empty())
+	{
+		// crio uma lista auxiliar que recebeo o meu elemento que esta em cima
+		listaAdj listaAux = minHeap.top();
+		//// retiro ele da minha fila
+		minHeap.pop();
+
+		int umVertice = listaAux.second;
+		double umPesoAresta = listaAux.first;
+
+		// verifico se ele ja foi visitado
+		if (umPesoAresta <= distancia[umVertice])
+		{
+			for (vector<listaAdj>::iterator i = mGrafo[umVertice].begin(); i != mGrafo[umVertice].end(); i++)
 			{
-				int v2 = it->second;
-				double cost = it->first;
-				if(D[v2] < D[v] * cost) 
+				int mVertice = i->second;
+				double mPesoAresta = i->first;
+
+				// tento relaxar a aresta (adaptado para atender o problema)
+				if (distancia[mVertice] < distancia[umVertice] * mPesoAresta)
 				{
-					D[v2] = D[v] * cost;
-					Q.push(ii(D[v2], v2));
+					distancia[mVertice] = distancia[umVertice] * mPesoAresta;
+					// adiciono ele na minha fila
+					minHeap.push(listaAdj(distancia[mVertice], mVertice));
 				}
 			}
 		}
 	}
+	return distancia[verticeDestino];
 }
 
-int main ()
+void inicializar(int mVerticeOrigem)
 {
-	int m;
-	int u, v, w;
-	while(1)
+	for (int i = 0; i <= numVertices; i++)
 	{
-		cin >> n;
-		if (!n) return 0;
-		
-		cin >> m;
-		
-		D.assign(n,-1);
-		G.assign(n,vector<ii>());
-		while(m--)
-		{
-			cin >> u >> v >> w;
-			G[u - 1].push_back(ii((double)w/100, v - 1));
-			G[v - 1].push_back(ii((double)w/100, u - 1));
-			
-		}
-		
-		dijkstra(0,n - 1);
-			
-		printf("%lf percent\n", D[n - 1]*100);
-		
-		D.clear();
-		G.clear();
+		distancia[i] = -1;
 	}
+	distancia[mVerticeOrigem] = 1.0;
 }
